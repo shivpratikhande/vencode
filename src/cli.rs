@@ -11,6 +11,7 @@ pub struct Cli {
 pub enum Command {
     Start,
     Stop,
+    Init
 }
 
 pub fn parse_cli() -> Command {

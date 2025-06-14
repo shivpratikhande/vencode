@@ -1,11 +1,31 @@
 use std::fs;
 use std::process::{Command, Stdio};
 
+use std::path::Path;
+
+fn generate_unique_filename(base: &str, ext: &str) -> String {
+    let mut count = 0;
+    loop {
+        let filename = if count == 0 {
+            format!("{}.{}", base, ext)
+        } else {
+            format!("{}_{}.{}", base, count, ext)
+        };
+
+        if !Path::new(&filename).exists() {
+            return filename;
+        }
+
+        count += 1;
+    }
+}
+
+
 const PID_FILE: &str = "/tmp/vencode_ffmpeg.pid";
 
 pub fn start_recording() -> Result<(), Box<dyn std::error::Error>> {
-    let home = std::env::var("HOME")?;
-    let output = format!("{}/Videos/recording.mp4", home);
+    let _home = std::env::var("HOME")?;
+    let output = generate_unique_filename("recording", "mp4");
     let framerate = 30;
 
     println!("Starting screen recording to '{}' at {} FPS...", output, framerate);
