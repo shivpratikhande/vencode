@@ -23,20 +23,27 @@ fn generate_unique_filename(base: &str, ext: &str) -> String {
 
 const PID_FILE: &str = "/tmp/vencode_ffmpeg.pid";
 
-pub fn start_recording() -> Result<(), Box<dyn std::error::Error>> {
+pub fn start_recording(framerate:u32) -> Result<(), Box<dyn std::error::Error>> {
     let _home = std::env::var("HOME")?;
     let output = generate_unique_filename("recording", "mp4");
-    let framerate = 30;
+    // let framerate = 30;
+
+    let audio_device = "bluez_output.C1_2E_50_DF_DF_48.1.monitor";
+
 
     println!("Starting screen recording to '{}' at {} FPS...", output, framerate);
 
     let child = Command::new("ffmpeg")
         .args([
-            "-f", "x11grab",
-            "-r", &framerate.to_string(),
-            "-i", ":0.0",
-            "-vcodec", "libx264",
-            "-preset", "ultrafast",
+           "-f", "x11grab",
+           "-r", &framerate.to_string(), 
+           "-i",":0.0",
+           "-f", "pulse",
+           "-i", audio_device,
+           "-vcodec", "libx264",
+           "-preset", "ultrafast",
+           "-acodec", "aac",
+           "-b:a", "192k",
             &output,
         ])
         .stdout(Stdio::null())

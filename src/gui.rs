@@ -7,7 +7,7 @@ pub fn launch_gui() -> Result<(), eframe::Error> {
             .with_min_inner_size([350.0, 250.0]),
         ..Default::default()
     };
-    
+
     eframe::run_native(
         "Vencode UI",
         options,
@@ -20,6 +20,7 @@ struct RecordingApp {
     is_recording: bool,
     last_error: Option<String>,
     status_message: Option<String>,
+    selected_fps: u32,
 }
 
 impl eframe::App for RecordingApp {
@@ -27,69 +28,83 @@ impl eframe::App for RecordingApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             // Add some padding and vertical centering
             ui.add_space(20.0);
-            
+
             // Center the content horizontally
             ui.vertical_centered(|ui| {
                 // Title with larger font
                 ui.heading("🎥 Vencode Screen Recorder");
                 ui.add_space(30.0);
-                
+
                 // Status indicator
                 let status_text = if self.is_recording {
                     "🔴 Recording in progress..."
                 } else {
                     "⚫ Ready to record"
                 };
-                
+
                 ui.label(egui::RichText::new(status_text).size(16.0));
                 ui.add_space(20.0);
-                
+
+                ui.label("🎞 Select Frame Rate:");
+                egui::ComboBox::from_id_source("fps_selector")
+                    .selected_text(format!("{} FPS", self.selected_fps))
+                    .show_ui(ui, |ui| {
+                        for &fps in &[30, 60, 120] {
+                            ui.selectable_value(
+                                &mut self.selected_fps,
+                                fps,
+                                format!("{} FPS", fps),
+                            );
+                        }
+                    });
+
+                ui.add_space(20.0);
+
                 // Main action button - properly sized and styled
                 let button_text = if self.is_recording {
                     "⏹ Stop Recording"
                 } else {
                     "▶ Start Recording"
                 };
-                
+
                 let button_color = if self.is_recording {
                     egui::Color32::from_rgb(220, 50, 50) // Red for stop
                 } else {
                     egui::Color32::from_rgb(50, 150, 50) // Green for start
                 };
-                
+
                 let button = egui::Button::new(egui::RichText::new(button_text).size(18.0))
                     .fill(button_color)
                     .min_size(egui::vec2(200.0, 50.0));
-                
+
                 if ui.add(button).clicked() {
                     self.handle_recording_toggle();
                 }
-                
+
                 ui.add_space(20.0);
-                
+
                 // Error display
                 if let Some(error) = &self.last_error {
-                    ui.colored_label(
-                        egui::Color32::RED,
-                        format!("❌ Error: {}", error)
-                    );
+                    ui.colored_label(egui::Color32::RED, format!("❌ Error: {}", error));
                 }
-                
+
                 // Status message display
                 if let Some(message) = &self.status_message {
                     ui.colored_label(
                         egui::Color32::from_rgb(0, 150, 0),
-                        format!("✅ {}", message)
+                        format!("✅ {}", message),
                     );
                 }
             });
-            
+
             // Footer with instructions
             ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
                 ui.add_space(10.0);
-                ui.label(egui::RichText::new("Click the button to start/stop screen recording")
-                    .size(12.0)
-                    .color(egui::Color32::GRAY));
+                ui.label(
+                    egui::RichText::new("Click the button to start/stop screen recording")
+                        .size(12.0)
+                        .color(egui::Color32::GRAY),
+                );
             });
         });
 
@@ -105,10 +120,10 @@ impl RecordingApp {
         // Clear previous messages
         self.last_error = None;
         self.status_message = None;
-        
+
         if !self.is_recording {
             // Start recording
-            match crate::recorder::start_recording() {
+            match crate::recorder::start_recording(self.selected_fps) {
                 Ok(_) => {
                     self.is_recording = true;
                     self.status_message = Some("Recording started successfully!".to_string());

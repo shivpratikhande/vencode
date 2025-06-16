@@ -7,7 +7,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     match command {
         cli::Command::Start => {
-            recorder::start_recording()?;
+            recorder::start_recording(30)?;
         }
         cli::Command::Stop => {
             recorder::stop_recording()?;
